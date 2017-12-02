@@ -1,10 +1,27 @@
 RProject
 ================
 
-GitHub Documents
-----------------
+Table of contents
+=================
 
-This is an R Markdown format used for publishing markdown documents to GitHub. When you click the **Knit** button all R code chunks are run and a markdown file (.md) suitable for publishing to GitHub is generated.
+1.  [Introduction](#introduction)
+2.  [Some paragraph](#paragraph1)
+    1.  [Sub paragraph](#subparagraph1)
+3.  [Another paragraph](#paragraph2)
+
+<a name="introduction"></a> This is the introduction
+----------------------------------------------------
+
+Some introduction text, formatted in heading 2 style
+
+<a name="paragraph1"></a> Some paragraph
+----------------------------------------
+
+The first paragraph text
+
+### <a name="subparagraph1"></a> Sub paragraph
+
+This is a sub paragraph, formatted in heading 3 style
 
 Including Code
 --------------
