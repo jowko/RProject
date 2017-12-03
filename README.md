@@ -6,7 +6,7 @@ Piotr Jówko
 Table of contents
 =================
 
-1.  [Summary](#summary)
+1.  [Introduction](#intro)
 2.  [Used libraries](#libriaries)
 3.  [Data loading](#dataLoading)
 4.  [Data Cleaning](#cleaning)
@@ -14,8 +14,8 @@ Table of contents
 6.  [Correlations](#correlations)
 7.  [Regressor](#regressor)
 
-<a name="summary"></a> Summary
-------------------------------
+<a name="intro"></a> Introduction
+---------------------------------
 
 This analysis had a goal to predict energy output from sonal panels. It was done by creating Linear Regression model. As it shown in this report, irradiation has dominating effect on energy output. Also important is low humidity and cloud cover, right season in year and altitude. RMSE for training and testing subset is very similar.
 
@@ -223,16 +223,13 @@ fit
     ## 
     ## Tuning parameter 'intercept' was held constant at a value of TRUE
 
-Variable importance:
+Predict values for testing subset:
 
 ``` r
 predictedValues <- predict(fit, newdata = testing)
-
-# show variable importance
-ggplot(varImp(fit))
 ```
 
-![](README_files/figure-markdown_github/regressor3-1.png)
+Variable importance: ![](README_files/figure-markdown_github/regressor4-1.png)
 
 As we can see on a chart, irradiation dominates over other variables. Altitute and dist is important and have positive impact on energy output. Cloud cover and humidity have high negative impact on energy output. Also year and day have positive impact on energy output. This is probably related to seasons.
 

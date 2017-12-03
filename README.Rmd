@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Table of contents
-1. [Summary](#summary)
+1. [Introduction](#intro)
 2. [Used libraries](#libriaries)
 3. [Data loading](#dataLoading)
 4. [Data Cleaning](#cleaning)
@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo = TRUE)
 6. [Correlations](#correlations)
 7. [Regressor](#regressor)
 
-## <a name="summary"></a> Summary
+## <a name="intro"></a> Introduction
 This analysis had a goal to predict energy output from sonal panels. It was done by creating Linear Regression model. As it shown in this report, irradiation has dominating effect on energy output. Also important is low humidity and cloud cover, right season in year and altitude. RMSE for training and testing subset is very similar.
 
 ## <a name="libriaries"></a> Used libraries
@@ -114,23 +114,25 @@ fit <- train(kwh ~ ., data = training, method = "lm", metric="RMSE", trControl =
 fit
 ```
 
-Variable importance:
-```{r regressor3, warning=FALSE, message=FALSE, fig.height = 10, fig.width = 10}
+Predict values for testing subset:
+```{r regressor3, warning=FALSE, message=FALSE}
 predictedValues <- predict(fit, newdata = testing)
+```
 
-# show variable importance
+Variable importance:
+```{r regressor4, echo=FALSE, fig.height = 10, fig.width = 10}
 ggplot(varImp(fit))
 ```
 
 As we can see on a chart, irradiation dominates over other variables. Altitute and dist is important and have positive impact on energy output. Cloud cover and humidity have high negative impact on energy output. Also year and day have positive impact on energy output. This is probably related to seasons.
 
 Summary:
-```{r regressor4, echo=FALSE}
+```{r regressor5, echo=FALSE}
 modelvalues<-data.frame(obs = testing$kwh, pred=predictedValues)
 defaultSummary(modelvalues)
 ```
 
-```{r regressor5, echo=FALSE}
+```{r regressor6, echo=FALSE}
 summary(fit)
 ```
 
