@@ -1,6 +1,8 @@
 ---
 title: "RProject"
+author: "Piotr Jówko"
 output: github_document
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 ---
 
 ```{r setup, include=FALSE}
@@ -8,34 +10,83 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Table of contents
-1. [Introduction](#introduction)
-2. [Some paragraph](#paragraph1)
-    1. [Sub paragraph](#subparagraph1)
-3. [Another paragraph](#paragraph2)
+1. [Summary](#summary)
+2. [Used libraries](#libriaries)
+3. [Data loading](#dataLoading)
+4. [Data Cleaning](#cleaning)
+5. [Basic statistics](#baseStats)
+6. [Correlations](#correlations)
 
-## <a name="introduction"></a> This is the introduction 
-Some introduction text, formatted in heading 2 style
+## <a name="summary"></a> Summary
+//TODO
 
-## <a name="paragraph1"></a> Some paragraph 
-The first paragraph text
+## <a name="libriaries"></a> Used libraries
+- dplyr
+- tidyr
+- ggplot2
+- corrplot
+- caret
+```{r libriaries, include=FALSE}
+library(dplyr);
+library(tidyr)
+library(ggplot2);
+library(corrplot)
+library(caret);
 
-### <a name="subparagraph1"></a> Sub paragraph 
-This is a sub paragraph, formatted in heading 3 style
-
-## Including Code
-
-You can include R code in the document as follows:
-
-```{r cars}
-summary(cars)
+set.seed(23);
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
+## <a name="dataLoading"></a> Data loading
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+Reading data from file:
+
+```{r dataLoading, cache=TRUE}
+panels <- read.csv(file = 'solar_panels.csv')
+#panels <- head(panels, 1000) #used for testing only
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## <a name="cleaning"></a> Data Cleaning
+All rows with any NA values were removed. </br>
+Also columns: id, data, anno were removed. Id is not needed in analysis. </br>
+Data is redundant, because date is stored in others columns and there it is normalized(ora, day, anno). </br>
+Anno had only two values: 2012 and 2013, with will not be needed in analysis.
+```{r cleaning}
+panels <- panels %>% drop_na() %>% select(-id, -anno, -data)
+```
+
+Also some fields were renamed, because they names were confusing or unclear. 
+```{r cleaning2}
+panels <- panels %>% rename(day_365 = day, latitude = lat, longitude = lon, hour = ora, room_temperature = temperatura_ambiente, irradiation = irradiamento)
+interactiveChart <- select(panels, latitude, longitude, hour, kwh)
+```
+
+## <a name="baseStats"></a> Basic statistics
+Number of rows and columns:
+```{r baseStats, echo=FALSE}
+dim(panels)
+```
+
+Data summary:
+```{r baseStats2, echo=FALSE}
+summary(panels)
+```
+
+## <a name="correlations"></a> Correlations
+In thi step correlation matrix is calculated(correlation with each pair of columns). <br>
+For clarity some rows(with no correlation greater than 0.4 or less than -0.4) were removed.
+```{r correlations, fig.height = 10, fig.width = 10}
+corMatrix <- cor(panels)
+
+# Change diagonal values from 1 to 0. Needed for weak correlations removal.
+for(i in 1:dim(corMatrix)[1]) {
+    corMatrix[i, i] <- 0;
+}
+
+# Remove "weak" correlations.
+strongCor <- corMatrix[apply(corMatrix, MARGIN = 1, function(x) any(x > 0.40 | x < -0.40)), ]
+
+corrplot(strongCor, method = "square", type="lower", diag=FALSE)
+```
+
+As it seen on chart, kwh have strong positive correlation with irriadiation and strong negative correlation with humidity with is obvious. 
