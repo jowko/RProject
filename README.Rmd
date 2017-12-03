@@ -16,17 +16,14 @@ knitr::opts_chunk$set(echo = TRUE)
 4. [Data Cleaning](#cleaning)
 5. [Basic statistics](#baseStats)
 6. [Correlations](#correlations)
+7. [Regressor](#regressor)
 
 ## <a name="summary"></a> Summary
-//TODO
+This analysis had a goal to predict energy output from sonal panels. It was done by creating Linear Regression model. As it shown in this report, irradiation has dominating effect on energy output. Also important is low humidity and cloud cover, right season in year and altitude. RMSE for training and testing subset is very similar.
 
 ## <a name="libriaries"></a> Used libraries
-- dplyr
-- tidyr
-- ggplot2
-- corrplot
-- caret
-```{r libriaries, include=FALSE}
+```{r libriaries, message=FALSE, warning=FALSE}
+library(plyr);
 library(dplyr);
 library(tidyr)
 library(ggplot2);
@@ -43,22 +40,29 @@ Reading data from file:
 
 ```{r dataLoading, cache=TRUE}
 panels <- read.csv(file = 'solar_panels.csv')
-#panels <- head(panels, 1000) #used for testing only
+```
+
+```{r dataLoading2, include=FALSE}
+#panels <- head(panels, 10000) #used for testing only
 ```
 
 ## <a name="cleaning"></a> Data Cleaning
 All rows with any NA values were removed. </br>
-Also columns: id, data, anno were removed. Id is not needed in analysis. </br>
+Columns: id and data were removed. Id is not needed in analysis. </br>
 Data is redundant, because date is stored in others columns and there it is normalized(ora, day, anno). </br>
-Anno had only two values: 2012 and 2013, with will not be needed in analysis.
 ```{r cleaning}
-panels <- panels %>% drop_na() %>% select(-id, -anno, -data)
+panels <- panels %>% drop_na() %>% select(-id, -data)
 ```
 
-Also some fields were renamed, because they names were confusing or unclear. 
+Some fields were renamed, because they names were confusing, unclear or were in spanish language. 
 ```{r cleaning2}
-panels <- panels %>% rename(day_365 = day, latitude = lat, longitude = lon, hour = ora, room_temperature = temperatura_ambiente, irradiation = irradiamento)
-interactiveChart <- select(panels, latitude, longitude, hour, kwh)
+panels <- panels %>% rename(day_365 = day, latitude = lat, longitude = lon, hour = ora, room_temperature = temperatura_ambiente, irradiation = irradiamento, year = anno)
+```
+
+Irradiation with value 0 in middle of a day mean measurement error. All rows with zero values in this column beetwen 8:00 - 16:00 (values beetwen 0.333 and 0.778 in hour column) were removed.<br>
+Pressure with value 0 also mean sensors malfunction and rows with this values were also removed.  
+```{r cleaning3}
+panels <- filter(panels, irradiation > 0 | hour < 0.333 | hour > 0.778) %>% filter(pressure != 0)
 ```
 
 ## <a name="baseStats"></a> Basic statistics
@@ -74,7 +78,7 @@ summary(panels)
 
 ## <a name="correlations"></a> Correlations
 In thi step correlation matrix is calculated(correlation with each pair of columns). <br>
-For clarity some rows(with no correlation greater than 0.4 or less than -0.4) were removed.
+For clarity some rows(with no correlation greater than 0.4 or less than -0.4) are not shown on plot.
 ```{r correlations, fig.height = 10, fig.width = 10}
 corMatrix <- cor(panels)
 
@@ -89,4 +93,44 @@ strongCor <- corMatrix[apply(corMatrix, MARGIN = 1, function(x) any(x > 0.40 | x
 corrplot(strongCor, method = "square", type="lower", diag=FALSE)
 ```
 
-As it seen on chart, kwh have strong positive correlation with irriadiation and strong negative correlation with humidity with is obvious. 
+As it seen on chart, kwh have strong positive correlation with irriadiation and strong negative correlation with humidity with is obvious. Altitude has positive impact on energy output. There is also positive correlation beetwen temperature and energy output, with probably is connected with time of day and irriadiation.
+
+## <a name="regressor"></a> Regressor
+70% of records were choosen to teach model and 30% to validate and test. 
+Prepare data for regressor:
+```{r regressor}
+inTraining <- createDataPartition(y = panels$kwh, p = .70, list = FALSE)
+
+training <- panels[ inTraining,]
+testing  <- panels[-inTraining,]
+
+ctrl <- trainControl(method = "repeatedcv", number = 5, repeats = 5)
+
+```
+
+Train model with linear regression:
+```{r regressor2, warning=FALSE, message=FALSE}
+fit <- train(kwh ~ ., data = training, method = "lm", metric="RMSE", trControl = ctrl)
+fit
+```
+
+Variable importance:
+```{r regressor3, warning=FALSE, message=FALSE, fig.height = 10, fig.width = 10}
+predictedValues <- predict(fit, newdata = testing)
+
+# show variable importance
+ggplot(varImp(fit))
+```
+
+As we can see on a chart, irradiation dominates over other variables. Altitute and dist is important and have positive impact on energy output. Cloud cover and humidity have high negative impact on energy output. Also year and day have positive impact on energy output. This is probably related to seasons.
+
+Summary:
+```{r regressor4, echo=FALSE}
+modelvalues<-data.frame(obs = testing$kwh, pred=predictedValues)
+defaultSummary(modelvalues)
+```
+
+```{r regressor5, echo=FALSE}
+summary(fit)
+```
+
